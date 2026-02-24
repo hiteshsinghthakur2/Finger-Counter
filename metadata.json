@@ -1,0 +1,7 @@
+{
+  "name": "Finger Counter",
+  "description": "An AI-powered app that counts the number of fingers you hold up to the camera.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
