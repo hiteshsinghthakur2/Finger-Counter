@@ -3,7 +3,18 @@ import { GoogleGenAI } from '@google/genai';
 import { Camera, StopCircle, Hand, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiClient: GoogleGenAI | null = null;
+
+const getAiClient = () => {
+  if (!aiClient) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'undefined') {
+      throw new Error('GEMINI_API_KEY is not set');
+    }
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+};
 
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -17,6 +28,15 @@ export default function App() {
 
   const startCamera = async () => {
     setError(null);
+    
+    // Check API key before starting camera
+    try {
+      getAiClient();
+    } catch (err) {
+      setError('Gemini API key is missing. Please add GEMINI_API_KEY to your Vercel environment variables and redeploy.');
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } 
@@ -64,6 +84,7 @@ export default function App() {
         
         const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
         
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
           model: 'gemini-3-flash-preview',
           contents: {
